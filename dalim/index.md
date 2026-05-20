@@ -21,7 +21,15 @@
 6. 데이터 보안
 모든 데이터는 기기 내 SwiftData 및 UserDefaults에 저장됩니다. 외부 서버로의 전송, 제3자 공유, 광고 목적 사용은 일절 없습니다.
 
-7. 문의
+7. 데이터 보관 및 삭제
+앱의 모든 데이터는 앱이 설치된 기간 동안 사용자의 기기에만 보관됩니다. 별도의 자동 삭제 기한은 없습니다.
+
+데이터 삭제 방법:
+- 개별 러닝 기록 삭제: 러닝 기록 상세 화면 → 삭제 버튼
+- 앱 전체 데이터 삭제: iPhone에서 앱을 삭제하면 앱 관련 모든 데이터가 함께 영구 삭제됩니다.
+- Apple 건강 앱 데이터: 건강 앱에서 직접 삭제하거나, iPhone 설정 → 개인정보 보호 → 건강에서 달림의 접근 권한을 해제할 수 있습니다.
+
+8. 문의
 개인정보 관련 문의는 앱 스토어 지원 페이지를 이용해 주세요.
 
 시행일: 2026년 5월 19일
@@ -50,7 +58,15 @@ With your permission, Dalim uses motion sensor data to measure step count during
 6. Data Security
 All data is stored locally using SwiftData and UserDefaults. We do not share your data with third parties, use it for advertising, or transmit it anywhere outside your device.
 
-7. Contact
+7. Data Retention & Deletion
+All data is retained on your device for as long as the app is installed. There is no automatic expiry or scheduled deletion.
+
+How to delete your data:
+- Delete individual runs: Open a run's detail screen and tap the Delete button.
+- Delete all app data: Uninstalling Dalim from your iPhone permanently removes all associated data.
+- Apple Health data: Delete it directly from the Health app, or revoke Dalim's access via iPhone Settings → Privacy & Security → Health.
+
+8. Contact
 For privacy-related questions, please use the support link on the App Store page.
 
 Effective Date: May 19, 2026
