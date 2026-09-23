@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TestPin 좌표 세트 가져오기</title>
+<meta name="robots" content="noindex">
+<style>
+  :root { color-scheme: light dark; --muted:#6b6b70; --card:#f2f2f7; --line:#e5e5ea; }
+  @media (prefers-color-scheme: dark) { :root { --card:#2c2c2e; --line:#3a3a3c; --muted:#98989e; } }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:16px; font:16px -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif; max-width:680px; margin-inline:auto; }
+  h1 { font-size:22px; margin:8px 0 4px; }
+  .sub { color:var(--muted); font-size:14px; margin:0 0 16px; }
+  .card { background:var(--card); border-radius:14px; padding:14px 16px; margin:12px 0; }
+  .pin { display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid var(--line); }
+  .pin:last-child { border-bottom:0; }
+  .pin b { font-variant-numeric: tabular-nums; font-weight:500; color:var(--muted); font-size:14px; }
+  a.btn { display:block; text-align:center; padding:14px; border-radius:12px; background:#0a84ff; color:#fff; text-decoration:none; font-weight:600; margin:10px 0; }
+  a.btn.secondary { background:transparent; color:#0a84ff; border:1px solid #0a84ff; }
+  .note { font-size:13px; color:var(--muted); }
+  .err { color:#ff3b30; }
+</style>
+</head>
+<body>
+  <h1 id="title">TestPin 좌표 세트</h1>
+  <p class="sub">이 링크의 핀 목록입니다. 데이터는 링크(주소창의 # 뒤)에만 들어 있으며 서버로 전송되지 않습니다.</p>
+
+  <div class="card" id="list"><p class="note">링크를 읽는 중…</p></div>
+
+  <a class="btn" id="open" href="#">TestPin에서 열기</a>
+  <a class="btn secondary" id="store" href="https://apps.apple.com/app/testpin/id0000000000" target="_blank" rel="noopener">앱이 없다면 App Store에서 받기</a>
+
+  <p class="note">"TestPin에서 열기"를 눌러도 반응이 없으면 앱이 설치되지 않은 상태입니다. 설치 후 이 페이지로 돌아와 다시 누르세요.</p>
+  <p class="note">TestPin · <a href="../">개인정보처리방침</a> · <a href="../support/">지원</a></p>
+
+<script>
+(function () {
+  var code = (location.hash || "").replace(/^#/, "");
+  var listEl = document.getElementById("list");
+  if (!code) { listEl.innerHTML = '<p class="note err">링크에 데이터가 없습니다.</p>'; document.getElementById("open").style.display = "none"; return; }
+  document.getElementById("open").setAttribute("href", "testpin://import#" + code);
+
+  function fromB64url(s) {
+    s = s.replace(/-/g, "+").replace(/_/g, "/"); while (s.length % 4) s += "=";
+    var bin = atob(s); var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+  try {
+    var wire = JSON.parse(fromB64url(code));
+    if (wire.v !== 1 || !Array.isArray(wire.p)) throw new Error("unsupported");
+    if (wire.t) document.getElementById("title").textContent = wire.t;
+    listEl.innerHTML = "";
+    wire.p.forEach(function (row) {
+      var d = document.createElement("div"); d.className = "pin";
+      var n = document.createElement("span"); n.textContent = row[0] + (row[4] ? " · " + row[4] : "");
+      var c = document.createElement("b"); c.textContent = Number(row[1]).toFixed(6) + ", " + Number(row[2]).toFixed(6);
+      d.appendChild(n); d.appendChild(c); listEl.appendChild(d);
+    });
+    var p = document.createElement("p"); p.className = "note"; p.textContent = wire.p.length + "개 핀"; listEl.appendChild(p);
+  } catch (e) {
+    listEl.innerHTML = '<p class="note err">링크를 해석할 수 없습니다. 최신 TestPin에서 만든 링크인지 확인하세요.</p>';
+  }
+})();
+</script>
+</body>
+</html>

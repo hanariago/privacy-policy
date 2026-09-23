@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TestPin 적용 확인</title>
+<meta name="description" content="이 페이지가 브라우저 위치 API로 읽는 좌표를 그대로 보여줍니다. TestPin이 적용되면 선택한 핀 좌표가 표시됩니다.">
+<style>
+  :root { color-scheme: light dark; --ok:#34c759; --warn:#ff9f0a; --err:#ff3b30; --muted:#6b6b70; --card:#f2f2f7; --line:#e5e5ea; }
+  @media (prefers-color-scheme: dark) { :root { --card:#2c2c2e; --line:#3a3a3c; --muted:#98989e; } }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:16px; font:16px -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif; max-width: 680px; margin-inline:auto; }
+  h1 { font-size:22px; margin:8px 0 4px; }
+  .sub { color:var(--muted); font-size:14px; margin:0 0 16px; }
+  .card { background:var(--card); border-radius:14px; padding:14px 16px; margin:12px 0; }
+  .big { font-size:26px; font-weight:700; font-variant-numeric: tabular-nums; word-break: break-all; }
+  .status { display:flex; align-items:center; gap:8px; font-weight:600; }
+  .dot { width:12px; height:12px; border-radius:50%; background:var(--warn); flex:none; }
+  .ok .dot { background:var(--ok); } .err .dot { background:var(--err); }
+  .row { display:flex; justify-content:space-between; gap:12px; padding:6px 0; border-bottom:1px solid var(--line); font-size:14px; }
+  .row:last-child { border-bottom:0; }
+  .row b { font-variant-numeric: tabular-nums; text-align:right; }
+  button { font:inherit; padding:10px 14px; border-radius:10px; border:1px solid var(--line); background:transparent; color:inherit; }
+  button.primary { background:#0a84ff; color:#fff; border-color:#0a84ff; }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .log { font: 12px ui-monospace, Menlo, monospace; white-space: pre-wrap; max-height: 180px; overflow:auto; color:var(--muted); }
+  .note { font-size:13px; color:var(--muted); }
+  a { color:#0a84ff; }
+</style>
+</head>
+<body>
+  <h1>TestPin 적용 확인</h1>
+  <p class="sub">이 페이지는 브라우저 위치 API가 돌려주는 값을 <b>그대로</b> 보여줍니다. 아무것도 저장하거나 전송하지 않습니다.</p>
+
+  <div class="card" id="statusCard">
+    <div class="status"><span class="dot"></span><span id="statusText">위치를 요청하는 중…</span></div>
+    <div class="big" id="coords">—</div>
+    <div class="note" id="detail"></div>
+  </div>
+
+  <div class="card">
+    <div class="row"><span>getCurrentPosition</span><b id="once">…</b></div>
+    <div class="row"><span>watchPosition (마지막 업데이트)</span><b id="watch">…</b></div>
+    <div class="row"><span>watch 업데이트 횟수</span><b id="watchCount">0</b></div>
+    <div class="row"><span>accuracy</span><b id="acc">…</b></div>
+    <div class="row"><span>permissions.query('geolocation')</span><b id="perm">…</b></div>
+    <div class="row"><span>페이지 로드 직후 첫 응답까지</span><b id="latency">…</b></div>
+    <div class="actions">
+      <button class="primary" id="again">다시 요청</button>
+      <button id="reload">새로고침</button>
+      <button id="copy">결과 복사</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="note" style="margin:0 0 6px"><b>판별 방법</b></p>
+    <ol class="note" style="margin:0; padding-left:18px">
+      <li>TestPin 앱에서 선택한 핀 좌표와 위 좌표가 같으면 <b>적용된 것</b>입니다.</li>
+      <li>실제 위치가 보이면 확장이 꺼져 있거나 이 도메인이 적용 범위 밖입니다. Safari 툴바의 TestPin 아이콘을 눌러 상태를 확인하세요.</li>
+      <li>"configuration unavailable" 오류는 확장이 앱과 연결되지 못한 상태입니다. TestPin 앱을 한 번 열고 새로고침하세요. 이때 실제 위치는 전달되지 않습니다(안전 실패).</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <p class="note" style="margin:0"><b>IP 기반 위치는 바뀌지 않습니다.</b> TestPin은 Safari 웹페이지가 읽는 위치 API 값만 바꿉니다. 시스템 GPS, 다른 앱, IP 주소로 추정하는 위치는 그대로입니다.</p>
+  </div>
+
+  <div class="card"><div class="log" id="log"></div></div>
+  <p class="note">TestPin · <a href="../">개인정보처리방침</a> · <a href="../support/">지원</a></p>
+
+<script>
+(function () {
+  var t0 = performance.now();
+  var $ = function (id) { return document.getElementById(id); };
+  var lines = [];
+  function log(s) { lines.push(new Date().toISOString().slice(11, 23) + " " + s); $("log").textContent = lines.slice(-40).join("\n"); }
+  function fmt(c) { return c.latitude.toFixed(6) + ", " + c.longitude.toFixed(6); }
+  var first = null, watchCount = 0;
+
+  function setStatus(cls, text) { var card = $("statusCard"); card.className = "card " + cls; $("statusText").textContent = text; }
+
+  function onPos(source, pos) {
+    var c = pos.coords;
+    if (!first) { first = performance.now() - t0; $("latency").textContent = Math.round(first) + " ms"; }
+    $("coords").textContent = fmt(c);
+    $("acc").textContent = (c.accuracy != null ? Math.round(c.accuracy) + " m" : "—");
+    $("detail").textContent = "timestamp " + new Date(pos.timestamp).toLocaleTimeString();
+    setStatus("ok", "위치 응답 받음 (" + source + ")");
+    log(source + " → " + fmt(c) + " ±" + Math.round(c.accuracy) + "m");
+  }
+  function onErr(source, err) {
+    var msg = (err && err.message) || ("code " + (err && err.code));
+    setStatus("err", "오류 (" + source + ")");
+    $("coords").textContent = "오류 " + (err && err.code);
+    $("detail").textContent = msg;
+    log(source + " ✗ " + msg);
+  }
+
+  function requestOnce() {
+    $("once").textContent = "…";
+    if (!navigator.geolocation) { onErr("no API", { code: 0, message: "navigator.geolocation 없음" }); return; }
+    navigator.geolocation.getCurrentPosition(function (p) { $("once").textContent = fmt(p.coords); onPos("getCurrentPosition", p); },
+      function (e) { $("once").textContent = "오류 " + e.code; onErr("getCurrentPosition", e); },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+  }
+
+  // 1) Fire immediately at parse time — this is the leak test: a page that asks
+  //    for the position before DOMContentLoaded must still get the pin.
+  requestOnce();
+
+  // 2) watchPosition stream
+  if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(function (p) {
+      watchCount++; $("watchCount").textContent = String(watchCount);
+      $("watch").textContent = fmt(p.coords); onPos("watchPosition", p);
+    }, function (e) { $("watch").textContent = "오류 " + e.code; onErr("watchPosition", e); },
+    { enableHighAccuracy: true, maximumAge: 0 });
+  }
+
+  // 3) Permissions API state
+  if (navigator.permissions && navigator.permissions.query) {
+    navigator.permissions.query({ name: "geolocation" }).then(function (s) { $("perm").textContent = s.state; log("permissions: " + s.state); },
+      function () { $("perm").textContent = "n/a"; });
+  } else { $("perm").textContent = "n/a"; }
+
+  $("again").addEventListener("click", requestOnce);
+  $("reload").addEventListener("click", function () { location.reload(); });
+  $("copy").addEventListener("click", function () {
+    var text = "TestPin check\n" + $("coords").textContent + "\nonce: " + $("once").textContent + "\nwatch: " + $("watch").textContent + " (" + watchCount + ")\nperm: " + $("perm").textContent + "\n" + navigator.userAgent;
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { log("복사됨"); });
+  });
+})();
+</script>
+</body>
+</html>
