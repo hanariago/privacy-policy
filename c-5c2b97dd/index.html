@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TestPin 적용 확인</title>
-<meta name="description" content="이 페이지가 브라우저 위치 API로 읽는 좌표를 그대로 보여줍니다. TestPin이 적용되면 선택한 핀 좌표가 표시됩니다.">
+<title>Geolocation check</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="브라우저 위치 API가 돌려주는 값을 그대로 보여주는 진단 페이지.">
 <style>
   :root { color-scheme: light dark; --ok:#34c759; --warn:#ff9f0a; --err:#ff3b30; --muted:#6b6b70; --card:#f2f2f7; --line:#e5e5ea; }
   @media (prefers-color-scheme: dark) { :root { --card:#2c2c2e; --line:#3a3a3c; --muted:#98989e; } }
@@ -29,7 +30,7 @@
 </style>
 </head>
 <body>
-  <h1>TestPin 적용 확인</h1>
+  <h1>위치 API 확인</h1>
   <p class="sub">이 페이지는 브라우저 위치 API가 돌려주는 값을 <b>그대로</b> 보여줍니다. 아무것도 저장하거나 전송하지 않습니다.</p>
 
   <div class="card" id="statusCard">
@@ -55,18 +56,17 @@
   <div class="card">
     <p class="note" style="margin:0 0 6px"><b>판별 방법</b></p>
     <ol class="note" style="margin:0; padding-left:18px">
-      <li>TestPin 앱에서 선택한 핀 좌표와 위 좌표가 같으면 <b>적용된 것</b>입니다.</li>
-      <li>실제 위치가 보이면 확장이 꺼져 있거나 이 도메인이 적용 범위 밖입니다. Safari 주소창 왼쪽의 ⋯(또는 aA) 메뉴에서 TestPin을 눌러 상태를 확인하세요.</li>
-      <li>"configuration unavailable" 오류는 확장이 앱과 연결되지 못한 상태입니다. TestPin 앱을 한 번 열고 새로고침하세요. 이때 실제 위치는 전달되지 않습니다(안전 실패).</li>
+      <li>앱에서 선택한 좌표와 위 좌표가 같으면 <b>적용된 것</b>입니다.</li>
+      <li>실제 위치가 보이면 확장이 꺼져 있거나 이 사이트에서 허용되지 않은 상태입니다. Safari 주소창 왼쪽의 ⋯(또는 aA) 메뉴에서 확장 상태를 확인하세요.</li>
+      <li>"configuration unavailable" 오류는 확장이 앱과 연결되지 못한 상태입니다. 앱을 한 번 열고 새로고침하세요. 이때 실제 위치는 전달되지 않습니다(안전 실패).</li>
     </ol>
   </div>
 
   <div class="card">
-    <p class="note" style="margin:0"><b>IP 기반 위치는 바뀌지 않습니다.</b> TestPin은 Safari 웹페이지가 읽는 위치 API 값만 바꿉니다. 시스템 GPS, 다른 앱, IP 주소로 추정하는 위치는 그대로입니다.</p>
+    <p class="note" style="margin:0"><b>IP 기반 위치는 이 도구로 바뀌지 않습니다.</b> 브라우저 위치 API 값만 바뀝니다.</p>
   </div>
 
   <div class="card"><div class="log" id="log"></div></div>
-  <p class="note">TestPin · <a href="../">개인정보처리방침</a> · <a href="../support/">지원</a></p>
 
 <script>
 (function () {
@@ -126,7 +126,7 @@
   $("again").addEventListener("click", requestOnce);
   $("reload").addEventListener("click", function () { location.reload(); });
   $("copy").addEventListener("click", function () {
-    var text = "TestPin check\n" + $("coords").textContent + "\nonce: " + $("once").textContent + "\nwatch: " + $("watch").textContent + " (" + watchCount + ")\nperm: " + $("perm").textContent + "\n" + navigator.userAgent;
+    var text = "geo check\n" + $("coords").textContent + "\nonce: " + $("once").textContent + "\nwatch: " + $("watch").textContent + " (" + watchCount + ")\nperm: " + $("perm").textContent + "\n" + navigator.userAgent;
     if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { log("복사됨"); });
   });
 })();
